@@ -185,3 +185,160 @@ public class TextSummarizer {
     }
 }
 This program loads a pre-trained sentence model, splits the input text into sentences using the model, calculates a score for each sentence, sorts the sentences by score, selects the top sentences based on the desired summary length, and combines them into a summary. The calculateScore method can be replaced with your own algorithm for scoring sentences.
+
+
+
+#################################################################
+
+Sure! Here's an example program for text summarization using Stanford CoreNLP in Java:
+
+java
+Copy code
+import java.util.*;
+import edu.stanford.nlp.pipeline.*;
+import edu.stanford.nlp.ling.*;
+import edu.stanford.nlp.simple.*;
+
+public class TextSummarizer {
+    public static void main(String[] args) {
+        String text = "Enter your text here";
+
+        // Set up the Stanford CoreNLP pipeline
+        Properties props = new Properties();
+        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,parse,coref,sentiment");
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+
+        // Use the pipeline to annotate the text
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+
+        // Extract the sentences from the annotation
+        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+
+        // Calculate the score for each sentence
+        List<SentenceScore> scores = new ArrayList<SentenceScore>();
+        for (int i = 0; i < sentences.size(); i++) {
+            double score = calculateScore(sentences.get(i));
+            scores.add(new SentenceScore(i, sentences.get(i).toString(), score));
+        }
+
+        // Sort the sentences by score
+        scores.sort((s1, s2) -> Double.compare(s2.getScore(), s1.getScore()));
+
+        // Get the top sentences
+        int numSentences = (int) Math.round(sentences.size() * 0.3); // set the summary length
+        List<String> topSentences = new ArrayList<String>();
+        for (int i = 0; i < numSentences; i++) {
+            topSentences.add(scores.get(i).getSentence());
+        }
+
+        // Combine the top sentences into a summary
+        String summary = String.join(" ", topSentences);
+
+        System.out.println(summary);
+    }
+
+    private static double calculateScore(CoreMap sentence) {
+        // Use your own algorithm to calculate the score for a sentence
+        // Here's an example that counts the number of named entities in the sentence
+        List<CoreLabel> tokens = sentence.get(CoreAnnotations.TokensAnnotation.class);
+        int count = 0;
+        for (CoreLabel token : tokens) {
+            String ner = token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
+            if (ner != null && !ner.equals("O")) {
+                count++;
+            }
+        }
+        return (double) count / tokens.size();
+    }
+
+    private static class SentenceScore {
+        private int index;
+        private String sentence;
+        private double score;
+
+        public SentenceScore(int index, String sentence, double score) {
+            this.index = index;
+            this.sentence = sentence;
+            this.score = score;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public String getSentence() {
+            return sentence;
+        }
+
+        public double getScore() {
+            return score;
+        }
+    }
+}
+This program sets up the Stanford CoreNLP pipeline with several annotators, annotates the input text using the pipeline, extracts the sentences from the annotation, calculates a score for each sentence, sorts the sentences by score, selects the top sentences based on the desired summary length, and combines them into a summary. The calculateScore method can be replaced with your own algorithm for scoring sentences.
+
+
+
+
+
+
+#####################################################
+
+Sure! Here's an example program for text summarization using TextRank in Java:
+
+java
+Copy code
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.github.chen0040.textranking.*;
+import com.github.chen0040.textranking.models.*;
+import com.github.chen0040.textranking.utils.*;
+
+public class TextSummarizer {
+    public static void main(String[] args) {
+        String text = "Enter your text here";
+
+        // Set up the TextRank algorithm
+        TextRankAlgorithm textRank = new TextRankAlgorithm();
+        textRank.setWindowSize(2);
+        textRank.setDampingFactor(0.85);
+        textRank.setMaxIterations(100);
+        textRank.setConvergenceThreshold(0.0001);
+
+        // Tokenize the text
+        List<String> tokens = TokenizerUtils.getTokens(text);
+
+        // Build the word graph
+        WordGraph wordGraph = textRank.buildWordGraph(tokens);
+
+        // Calculate the TextRank scores for the words
+        Map<String, Double> wordScores = textRank.getWordScores(wordGraph);
+
+        // Calculate the TextRank scores for the sentences
+        List<Sentence> sentences = IntStream.range(0, wordGraph.getSentences().size())
+                .mapToObj(i -> new Sentence(i, wordGraph.getSentences().get(i)))
+                .collect(Collectors.toList());
+        Map<Sentence, Double> sentenceScores = textRank.getSentenceScores(sentences, wordScores);
+
+        // Sort the sentences by score
+        List<Sentence> topSentences = sentenceScores.entrySet().stream()
+                .sorted(Map.Entry.<Sentence, Double>comparingByValue().reversed())
+                .map(Map.Entry::getKey)
+                .limit((int) Math.round(sentences.size() * 0.3)) // set the summary length
+                .sorted(Comparator.comparing(Sentence::getIndex))
+                .collect(Collectors.toList());
+
+        // Combine the top sentences into a summary
+        String summary = topSentences.stream()
+                .map(sentence -> StringUtils.strip(sentence.getRawSentence()))
+                .collect(Collectors.joining(" "));
+
+        System.out.println(summary);
+    }
+}
+This program sets up the TextRank algorithm with some parameters, tokenizes the input text, builds the word graph from the tokens, calculates TextRank scores for the words and sentences, sorts the sentences by score, selects the top sentences based on the desired summary length, and combines them into a summary. The summary length is set by multiplying the number of sentences in the input text by a fraction (e.g., 0.3). You can adjust this fraction to control the length of the summary.
