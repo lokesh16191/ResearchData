@@ -1,0 +1,187 @@
+Java program using Apache OpenNLP for text summarization
+
+\Sure, here's an example Java program using Apache OpenNLP for text summarization. This program takes a text file as input and outputs a summary of the text, consisting of the most important sentences.
+
+java
+Copy code
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+import opennlp.tools.sentdetect.SentenceDetectorME;
+import opennlp.tools.sentdetect.SentenceModel;
+
+public class TextSummarizer {
+
+    public static void main(String[] args) throws IOException {
+        String inputFilePath = "input.txt";
+        int numSentences = 3;
+
+        // Load the input text file
+        String inputText = loadTextFile(inputFilePath);
+
+        // Tokenize the text into sentences using OpenNLP
+        SentenceModel sentenceModel = new SentenceModel(new FileInputStream("en-sent.bin"));
+        SentenceDetectorME sentenceDetector = new SentenceDetectorME(sentenceModel);
+        String[] sentences = sentenceDetector.sentDetect(inputText);
+
+        // Calculate the importance score for each sentence
+        List<SentenceScore> sentenceScores = new ArrayList<>();
+        for (String sentence : sentences) {
+            double score = calculateSentenceScore(sentence);
+            sentenceScores.add(new SentenceScore(sentence, score));
+        }
+
+        // Sort the sentences by importance score
+        Collections.sort(sentenceScores, Comparator.comparingDouble(SentenceScore::getScore).reversed());
+
+        // Output the most important sentences as the summary
+        System.out.println("Summary:");
+        for (int i = 0; i < numSentences; i++) {
+            System.out.println(sentenceScores.get(i).getSentence());
+        }
+    }
+
+    private static String loadTextFile(String filePath) throws IOException {
+        InputStream inputStream = new FileInputStream(filePath);
+        byte[] buffer = new byte[inputStream.available()];
+        inputStream.read(buffer);
+        inputStream.close();
+        return new String(buffer, "UTF-8");
+    }
+
+    private static double calculateSentenceScore(String sentence) {
+        // TODO: Implement a method to calculate the importance score of a sentence
+        // This could involve analyzing the words, phrases, and/or entities in the sentence
+        // and assigning a score based on their relevance to the overall text
+        // For this example, we will just use a random score between 0 and 1
+        return Math.random();
+    }
+
+    private static class SentenceScore {
+        private final String sentence;
+        private final double score;
+
+        public SentenceScore(String sentence, double score) {
+            this.sentence = sentence;
+            this.score = score;
+        }
+
+        public String getSentence() {
+            return sentence;
+        }
+
+        public double getScore() {
+            return score;
+        }
+    }
+
+}
+
+
+Sure! Here's an example program for text summarization using Apache OpenNLP in Java:
+
+java
+Copy code
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import opennlp.tools.sentdetect.SentenceDetectorME;
+import opennlp.tools.sentdetect.SentenceModel;
+
+public class TextSummarizer {
+
+    public static void main(String[] args) {
+        String text = "Enter your text here";
+
+        // Load the sentence model
+        InputStream modelIn = null;
+        SentenceModel model = null;
+        try {
+            modelIn = new FileInputStream("en-sent.bin");
+            model = new SentenceModel(modelIn);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (modelIn != null) {
+                try {
+                    modelIn.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        // Split the text into sentences
+        String[] sentences = new SentenceDetectorME(model).sentDetect(text);
+
+        // Calculate the score for each sentence
+        List<SentenceScore> scores = new ArrayList<SentenceScore>();
+        for (int i = 0; i < sentences.length; i++) {
+            double score = calculateScore(sentences[i]);
+            scores.add(new SentenceScore(i, sentences[i], score));
+        }
+
+        // Sort the sentences by score
+        scores.sort((s1, s2) -> Double.compare(s2.getScore(), s1.getScore()));
+
+        // Get the top sentences
+        int numSentences = (int) Math.round(sentences.length * 0.3); // set the summary length
+        List<String> topSentences = new ArrayList<String>();
+        for (int i = 0; i < numSentences; i++) {
+            topSentences.add(sentences[scores.get(i).getIndex()]);
+        }
+
+        // Combine the top sentences into a summary
+        String summary = String.join(" ", topSentences);
+
+        System.out.println(summary);
+    }
+
+    private static double calculateScore(String sentence) {
+        // Use your own algorithm to calculate the score for a sentence
+        // Here's an example that counts the number of keywords in the sentence
+        List<String> keywords = Arrays.asList("key", "words", "to", "look", "for");
+        int count = 0;
+        for (String keyword : keywords) {
+            if (sentence.toLowerCase().contains(keyword)) {
+                count++;
+            }
+        }
+        return (double) count / keywords.size();
+    }
+
+    private static class SentenceScore {
+        private int index;
+        private String sentence;
+        private double score;
+
+        public SentenceScore(int index, String sentence, double score) {
+            this.index = index;
+            this.sentence = sentence;
+            this.score = score;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public String getSentence() {
+            return sentence;
+        }
+
+        public double getScore() {
+            return score;
+        }
+    }
+}
+This program loads a pre-trained sentence model, splits the input text into sentences using the model, calculates a score for each sentence, sorts the sentences by score, selects the top sentences based on the desired summary length, and combines them into a summary. The calculateScore method can be replaced with your own algorithm for scoring sentences.
